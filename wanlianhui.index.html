@@ -1,0 +1,1127 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>万联网文 · 工作室内部系统（完整版）</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <style>
+        body { background-color: #f4f6f9; }
+        .sidebar { min-height: 100vh; background: #1e2a3a; color: #fff; }
+        .sidebar a { color: #b0c4de; text-decoration: none; padding: 0.5rem 1rem; display: block; border-radius: 0.25rem; margin: 0.2rem 0; }
+        .sidebar a:hover, .sidebar a.active { background: #2c3e50; color: #fff; }
+        .content { padding: 2rem; }
+        .card { box-shadow: 0 0 10px rgba(0,0,0,0.05); border: none; margin-bottom: 1.5rem; }
+        .login-container { max-width: 900px; margin: 3rem auto; }
+        .login-card { border: none; border-radius: 1rem; box-shadow: 0 0 20px rgba(0,0,0,0.1); }
+        .hidden { display: none !important; }
+        .btn-permission { padding: 0.2rem 0.5rem; font-size: 0.7rem; margin: 2px; }
+        .role-boss { background-color: #dc3545; color: white; }
+        .role-admin { background-color: #0d6efd; color: white; }
+        .role-manager { background-color: #fd7e14; color: white; }
+        .role-member { background-color: #6c757d; color: white; }
+        .discuss-messages { max-height: 400px; overflow-y: auto; background: #f8f9fa; padding: 1rem; border-radius: 0.5rem; }
+        .msg-item { margin-bottom: 0.75rem; border-bottom: 1px solid #dee2e6; padding-bottom: 0.5rem; }
+        .notice-item { border-left: 4px solid #007bff; padding: 0.75rem; margin-bottom: 1rem; background: #fff; border-radius: 0.25rem; }
+        .notice-item.top { border-left-color: #dc3545; background: #fff8f8; }
+        .delete-post { color: #dc3545; cursor: pointer; margin-left: 0.5rem; }
+        .delete-post:hover { opacity: 0.7; }
+    </style>
+</head>
+<body>
+    <!-- 登录/注册区域 -->
+    <div id="loginContainer" class="container login-container">
+        <div class="row g-4">
+            <div class="col-md-6">
+                <div class="card login-card p-4">
+                    <h3 class="text-center mb-3">🔐 登录</h3>
+                    <div class="mb-3">
+                        <label class="form-label">账号</label>
+                        <input type="text" id="loginAccount" class="form-control" placeholder="纯英文">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">密码</label>
+                        <input type="password" id="loginPassword" class="form-control" placeholder="数字+英文">
+                    </div>
+                    <button class="btn btn-primary w-100" id="loginBtn">登录</button>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card login-card p-4">
+                    <h3 class="text-center mb-3">📝 注册</h3>
+                    <div class="mb-2">
+                        <label class="form-label">笔名</label>
+                        <input type="text" id="regNickname" class="form-control" placeholder="如何称呼">
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label">账号 <span class="text-muted">(纯英文)</span></label>
+                        <input type="text" id="regAccount" class="form-control" placeholder="例如: qingya">
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label">密码 <span class="text-muted">(数字+英文)</span></label>
+                        <input type="password" id="regPassword" class="form-control" placeholder="例如: abc123">
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label">确认密码</label>
+                        <input type="password" id="regConfirm" class="form-control">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">主组别</label>
+                        <select id="regGroup" class="form-select"></select>
+                    </div>
+                    <button class="btn btn-success w-100" id="registerBtn">注册并登录</button>
+                    <div class="mt-3 small text-danger" id="regMessage"></div>
+                </div>
+            </div>
+        </div>
+        <div class="footer-text text-center mt-4">安全防护 · 账号纯英文 / 密码数字英文结合</div>
+    </div>
+
+    <!-- 主应用区域 -->
+    <div id="appContainer" class="container-fluid p-0 hidden">
+        <div class="row g-0">
+            <div class="col-md-2 sidebar p-3" id="sidebar"></div>
+            <div class="col-md-10 content" id="mainContent"></div>
+        </div>
+    </div>
+
+    <!-- 投稿模态框 -->
+    <div class="modal fade" id="writerPostModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header"><h5 class="modal-title">📝 发布新作品</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+                <div class="modal-body">
+                    <form id="postForm">
+                        <div class="mb-3"><label class="form-label">标题 <span class="text-danger">*</span></label><input type="text" class="form-control" id="postTitle"></div>
+                        <div class="mb-3"><label class="form-label">简介</label><textarea class="form-control" id="postDescription" rows="2"></textarea></div>
+                        <div class="mb-3"><label class="form-label">正文 <span class="text-danger">*</span></label><textarea class="form-control" id="postContent" rows="8"></textarea><div class="form-text mt-1">字数统计：<span id="wordCount">0</span> 字</div></div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3"><label class="form-label">所属组别</label><select class="form-select" id="postGroup"></select></div>
+                            <div class="col-md-6 mb-3"><label class="form-label">标签</label><input type="text" class="form-control" id="postTags" placeholder="仙侠, 爽文"></div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button><button type="button" class="btn btn-primary" id="submitPostBtn">发布投稿</button></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 提现模态框 -->
+    <div class="modal fade" id="withdrawModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header"><h5 class="modal-title">💰 申请提现</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+                <div class="modal-body">
+                    <form id="withdrawForm">
+                        <div class="mb-3"><label class="form-label">金额</label><input type="number" class="form-control" id="withdrawAmount" min="1" step="0.01" required></div>
+                        <div class="mb-3"><label class="form-label">方式</label><select class="form-select" id="withdrawMethod"><option value="微信">微信</option><option value="支付宝">支付宝</option><option value="银行卡">银行卡</option></select></div>
+                        <div class="mb-3"><label class="form-label">账号</label><input type="text" class="form-control" id="withdrawAccount" required></div>
+                        <div class="mb-3"><label class="form-label">备注</label><input type="text" class="form-control" id="withdrawNote"></div>
+                    </form>
+                </div>
+                <div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button><button type="button" class="btn btn-success" id="submitWithdrawBtn">提交</button></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 审阅模态框 -->
+    <div class="modal fade" id="reviewModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header"><h5 class="modal-title">📄 审阅</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+                <div class="modal-body">
+                    <div id="modalPostInfo"></div><hr>
+                    <h6>📝 内容</h6><div id="modalContent" class="border p-3 bg-light" style="max-height:200px; overflow:auto;"></div><hr>
+                    <h6>💬 批复</h6><div id="modalReviews" class="mb-3"></div>
+                    <div id="reviewInputArea" class="mt-2">
+                        <textarea id="reviewComment" class="form-control" rows="2" placeholder="批复..."></textarea>
+                        <div class="mt-2"><button class="btn btn-sm btn-success" id="submitReviewApprove">通过</button><button class="btn btn-sm btn-warning" id="submitReviewReject">退回</button><button class="btn btn-sm btn-secondary" id="submitReviewComment">评论</button></div>
+                    </div>
+                </div>
+                <div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 新增组别模态框 -->
+    <div class="modal fade" id="addGroupModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog"><div class="modal-content"><div class="modal-header"><h5 class="modal-title">➕ 新增组别</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body"><input type="text" class="form-control" id="newGroupName" placeholder="组别名称"></div><div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button><button type="button" class="btn btn-primary" id="submitAddGroup">添加</button></div></div></div>
+    </div>
+
+    <!-- 月度统计模态框 -->
+    <div class="modal fade" id="monthlyStatsModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header"><h5 class="modal-title">📊 月度稿费统计</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+                <div class="modal-body">
+                    <div class="mb-3"><label class="form-label">选择月份</label><input type="month" class="form-control" id="statsMonth"></div>
+                    <div id="monthlyStatsContent"></div>
+                </div>
+                <div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        (function() {
+            // ---------- API 配置 ----------
+            const COMMENT_API = "https://api.jsdelivr.net/comment";
+            const BASE_URL = window.location.origin + window.location.pathname;
+
+            const DATA_URLS = {
+                users: BASE_URL + '#data/users',
+                posts: BASE_URL + '#data/posts',
+                progress: BASE_URL + '#data/progress',
+                royalties: BASE_URL + '#data/royalties',
+                withdrawals: BASE_URL + '#data/withdrawals',
+                notifications: BASE_URL + '#data/notifications',
+                groups: BASE_URL + '#data/groups',
+            };
+
+            // ---------- 通用数据读写函数 ----------
+            async function loadData(url, defaultValue) {
+                try {
+                    const res = await fetch(`${COMMENT_API}?url=${encodeURIComponent(url)}`);
+                    const comments = await res.json();
+                    if (comments && comments.length > 0) {
+                        const latest = comments.sort((a, b) => new Date(b.time) - new Date(a.time))[0];
+                        return JSON.parse(latest.content);
+                    }
+                } catch (e) {
+                    console.error(`加载数据失败 ${url}`, e);
+                }
+                return defaultValue;
+            }
+
+            async function saveData(url, data) {
+                try {
+                    await fetch(COMMENT_API, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                            url: url,
+                            name: 'system',
+                            content: JSON.stringify(data),
+                        }),
+                    });
+                } catch (e) {
+                    console.error(`保存数据失败 ${url}`, e);
+                    throw e;
+                }
+            }
+
+            let _cachedData = {};
+
+            async function getData(key, defaultValue) {
+                if (_cachedData[key] !== undefined) return _cachedData[key];
+                const data = await loadData(DATA_URLS[key], defaultValue);
+                _cachedData[key] = data;
+                return data;
+            }
+
+            async function setData(key, newData) {
+                _cachedData[key] = newData;
+                await saveData(DATA_URLS[key], newData);
+            }
+
+            // ---------- 初始化默认数据 ----------
+            async function initDefaultData() {
+                const groupsDefault = [
+                    "传统修仙", "异常档案", "规则怪谈", "系统修仙", "国运副本",
+                    "爽文修仙", "异能都市", "反派修仙", "弱系统流警探", "反系统", "末世争霸",
+                    "综合管理组", "内容审核组", "项目执行组"
+                ];
+                const usersDefault = [{
+                    account: 'laoban',
+                    password: '080415zqx',
+                    nickname: '会长',
+                    role: 'boss',
+                    group: '综合管理组',
+                    extraGroups: []
+                }];
+                const progressDefault = groupsDefault.map(g => ({
+                    group: g,
+                    outlineDone: false,
+                    weekWords: 0,
+                    target: 28000
+                }));
+
+                let groups = await getData('groups', null);
+                if (!groups) await setData('groups', groupsDefault);
+
+                let users = await getData('users', null);
+                if (!users) await setData('users', usersDefault);
+
+                let progress = await getData('progress', null);
+                if (!progress) await setData('progress', progressDefault);
+
+                let royalties = await getData('royalties', null);
+                if (!royalties) await setData('royalties', []);
+
+                let withdrawals = await getData('withdrawals', null);
+                if (!withdrawals) await setData('withdrawals', []);
+
+                let notifications = await getData('notifications', null);
+                if (!notifications) await setData('notifications', []);
+            }
+
+            initDefaultData();
+
+            // ---------- 全局变量 ----------
+            let currentUser = null;
+            let activeSection = 'dashboard';
+            const ADMIN_GROUPS = ["综合管理组", "内容审核组", "项目执行组"];
+
+            function isBoss() { return currentUser?.role === 'boss'; }
+            function isAdmin() { return currentUser?.role === 'admin'; }
+            function isManager() { return currentUser?.role === 'manager'; }
+            function isAdminOrBoss() { return isAdmin() || isBoss(); }
+            function isManagerOrAbove() { return isManager() || isAdminOrBoss(); }
+            function canViewAllGroups() { return isManagerOrAbove(); }
+            function canManageAllGroups() { return isAdminOrBoss(); }
+            function canApproveWithdrawals() { return isAdminOrBoss(); }
+            function canPublishNotice() { return isAdminOrBoss(); }
+
+            function refreshCurrentSection() { renderSection(activeSection); }
+
+            async function addNotification(targetUser, message) {
+                const notifs = await getData('notifications', []);
+                notifs.push({ id: Date.now(), targetUser, message, time: new Date().toLocaleString(), read: false });
+                await setData('notifications', notifs);
+            }
+
+            async function syncCurrentUser() {
+                const sidebar = document.getElementById('sidebar');
+                if (!sidebar) return;
+                const strong = sidebar.querySelector('.text-white-50 strong');
+                if (!strong) return;
+                const nickname = strong.innerText;
+                const users = await getData('users', []);
+                currentUser = users.find(u => u.nickname === nickname) || null;
+            }
+
+            // ---------- 评论 API 辅助 ----------
+            async function fetchComments(url) {
+                try {
+                    const res = await fetch(`${COMMENT_API}?url=${encodeURIComponent(url)}`);
+                    return await res.json();
+                } catch (e) {
+                    console.error('加载评论失败', e);
+                    return [];
+                }
+            }
+
+            async function postComment(url, name, content) {
+                try {
+                    await fetch(COMMENT_API, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ url, name, content })
+                    });
+                    return true;
+                } catch (e) {
+                    console.error('发表评论失败', e);
+                    return false;
+                }
+            }
+
+            function getDiscussUrl(type, groupName = '') {
+                if (type === 'group') return BASE_URL + '#discuss/group/' + encodeURIComponent(groupName);
+                if (type === 'global') return BASE_URL + '#discuss/global';
+                if (type === 'allGroups') return BASE_URL + '#discuss/allgroups';
+                if (type === 'notice') return BASE_URL + '#notice';
+                return BASE_URL;
+            }
+
+            async function renderComments(container, comments) {
+                if (!comments || comments.length === 0) {
+                    container.innerHTML = '<div class="text-muted text-center p-3">暂无消息</div>';
+                    return;
+                }
+                container.innerHTML = comments.map(c => `
+                    <div class="msg-item">
+                        <strong>${c.name}</strong>: ${c.content}
+                        <small class="float-end">${c.time || ''}</small>
+                    </div>
+                `).join('');
+            }
+
+            // ---------- 事件委托 ----------
+            document.addEventListener('click', function(e) {
+                const target = e.target.closest('button');
+                if (!target) return;
+
+                const idHandlers = {
+                    loginBtn: handleLogin,
+                    registerBtn: handleRegister,
+                    logoutBtnSide: handleLogout,
+                    newPostBtn: handleNewPost,
+                    submitPostBtn: handleSubmitPost,
+                    newWithdrawBtn: () => new bootstrap.Modal(document.getElementById('withdrawModal')).show(),
+                    submitWithdrawBtn: handleWithdrawSubmit,
+                    newRoyaltyBtn: handleNewRoyalty,
+                    monthlyStatsBtn: showMonthlyStats,
+                    publishNoticeBtn: handlePublishNotice,
+                    addGroupBtn: () => new bootstrap.Modal(document.getElementById('addGroupModal')).show(),
+                    submitAddGroup: handleAddGroup,
+                    saveGlobalTarget: handleSaveTarget,
+                    backupBtn: handleBackup,
+                    submitReviewApprove: () => handleReview('approve'),
+                    submitReviewReject: () => handleReview('reject'),
+                    submitReviewComment: () => handleReview('comment'),
+                    sendDiscussBtn: () => handleSendDiscuss('group'),
+                    sendGlobalDiscussBtn: () => handleSendDiscuss('global'),
+                    sendAllGroupsBtn: () => handleSendDiscuss('allGroups')
+                };
+                if (idHandlers[target.id]) {
+                    e.preventDefault();
+                    idHandlers[target.id](e);
+                    return;
+                }
+
+                if (target.classList.contains('view-post')) handleViewPost(e);
+                else if (target.classList.contains('delete-post')) handleDeletePost(e);
+                else if (target.classList.contains('edit-status')) handleEditStatus(e);
+                else if (target.classList.contains('delete-royalty')) handleDeleteRoyalty(e);
+                else if (target.classList.contains('approve-withdraw')) handleApproveWithdraw(e);
+                else if (target.classList.contains('reject-withdraw')) handleRejectWithdraw(e);
+                else if (target.classList.contains('mark-read')) handleMarkRead(e);
+                else if (target.classList.contains('edit-progress')) handleEditProgress(e);
+                else if (target.classList.contains('change-group') || target.classList.contains('add-group') ||
+                         target.classList.contains('set-manager') || target.classList.contains('set-admin') ||
+                         target.classList.contains('demote-member') || target.classList.contains('demote-manager') ||
+                         target.classList.contains('delete-member'))
+                    handleMemberAction(e);
+            });
+
+            let wordCountTimer;
+            document.getElementById('postContent')?.addEventListener('input', function() {
+                clearTimeout(wordCountTimer);
+                wordCountTimer = setTimeout(() => {
+                    const text = this.value;
+                    const chinese = text.replace(/[^\u4e00-\u9fa5]/g, '').length;
+                    document.getElementById('wordCount').innerText = chinese;
+                }, 200);
+            });
+
+            document.getElementById('statsMonth')?.addEventListener('change', updateMonthlyStats);
+
+            // ---------- 稿件删除功能 ----------
+            async function handleDeletePost(e) {
+                const id = e.target.closest('.delete-post').dataset.id;
+                if (!confirm('确定要删除这篇稿件吗？')) return;
+                const posts = await getData('posts', []);
+                const post = posts.find(p => p.id == id);
+                if (!post) return;
+                // 权限检查：作者本人 或 管理员/老板
+                if (post.author !== currentUser.nickname && !isManagerOrAbove()) {
+                    alert('您没有权限删除此稿件');
+                    return;
+                }
+                const newPosts = posts.filter(p => p.id != id);
+                await setData('posts', newPosts);
+                // 更新进度：减去该稿件的字数
+                const progress = await getData('progress', []);
+                const prog = progress.find(p => p.group === post.group);
+                if (prog) {
+                    prog.weekWords = Math.max(0, prog.weekWords - post.words);
+                    await setData('progress', progress);
+                }
+                refreshCurrentSection();
+            }
+
+            // ---------- 核心处理函数 ----------
+            async function handleLogin(e) {
+                const account = document.getElementById('loginAccount').value.trim();
+                const pwd = document.getElementById('loginPassword').value.trim();
+                const users = await getData('users', []);
+                const user = users.find(u => u.account === account && u.password === pwd);
+                if (user) {
+                    currentUser = user;
+                    document.getElementById('loginContainer').classList.add('hidden');
+                    document.getElementById('appContainer').classList.remove('hidden');
+                    renderApp();
+                } else alert('账号或密码错误');
+            }
+
+            async function handleRegister(e) {
+                const nickname = document.getElementById('regNickname').value.trim();
+                const account = document.getElementById('regAccount').value.trim();
+                const pwd = document.getElementById('regPassword').value.trim();
+                const confirm = document.getElementById('regConfirm').value.trim();
+                const group = document.getElementById('regGroup').value;
+                if (!nickname || !account || !pwd || !confirm) return document.getElementById('regMessage').innerText = '所有字段必填';
+                if (!/^[A-Za-z]+$/.test(account)) return document.getElementById('regMessage').innerText = '账号需纯英文';
+                if (!/^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]+$/.test(pwd)) return document.getElementById('regMessage').innerText = '密码需字母+数字';
+                if (pwd !== confirm) return document.getElementById('regMessage').innerText = '密码不一致';
+                const users = await getData('users', []);
+                if (users.some(u => u.account === account)) return document.getElementById('regMessage').innerText = '账号已存在';
+                const groups = await getData('groups', []);
+                if (!groups.includes(group)) return document.getElementById('regMessage').innerText = '无效组别';
+                const newUser = { account, password: pwd, nickname, role: 'member', group, extraGroups: [] };
+                users.push(newUser);
+                await setData('users', users);
+                currentUser = newUser;
+                document.getElementById('loginContainer').classList.add('hidden');
+                document.getElementById('appContainer').classList.remove('hidden');
+                renderApp();
+            }
+
+            function handleLogout(e) {
+                e.preventDefault();
+                currentUser = null;
+                document.getElementById('loginContainer').classList.remove('hidden');
+                document.getElementById('appContainer').classList.add('hidden');
+            }
+
+            async function handleNewPost(e) {
+                e.preventDefault();
+                const groups = await getData('groups', []);
+                const available = isAdminOrBoss() ? groups : [currentUser.group];
+                const select = document.getElementById('postGroup');
+                select.innerHTML = '';
+                available.forEach(g => {
+                    const opt = document.createElement('option');
+                    opt.value = g; opt.textContent = g;
+                    if (g === currentUser.group) opt.selected = true;
+                    select.appendChild(opt);
+                });
+                document.getElementById('postTitle').value = '';
+                document.getElementById('postDescription').value = '';
+                document.getElementById('postContent').value = '';
+                document.getElementById('postTags').value = '';
+                document.getElementById('wordCount').innerText = '0';
+                new bootstrap.Modal(document.getElementById('writerPostModal')).show();
+            }
+
+            async function handleSubmitPost(e) {
+                const title = document.getElementById('postTitle').value.trim();
+                const content = document.getElementById('postContent').value.trim();
+                const group = document.getElementById('postGroup').value;
+                if (!title || !content) return alert('标题和正文不能为空');
+                const words = content.replace(/[^\u4e00-\u9fa5]/g, '').length;
+                if (words === 0) return alert('至少包含中文字符');
+                const posts = await getData('posts', []);
+                const newPost = {
+                    id: Date.now(), group, title, author: currentUser.nickname,
+                    time: new Date().toISOString().slice(0,10), words, content,
+                    description: document.getElementById('postDescription').value.trim(),
+                    tags: document.getElementById('postTags').value.split(',').map(s=>s.trim()).filter(Boolean),
+                    reviews: []
+                };
+                posts.push(newPost);
+                await setData('posts', posts);
+                const progress = await getData('progress', []);
+                const prog = progress.find(p => p.group === group);
+                if (prog) {
+                    prog.weekWords += words;
+                    await setData('progress', progress);
+                }
+                bootstrap.Modal.getInstance(document.getElementById('writerPostModal')).hide();
+                refreshCurrentSection();
+            }
+
+            async function handleViewPost(e) {
+                const id = e.target.closest('.view-post').dataset.id;
+                const posts = await getData('posts', []);
+                const post = posts.find(p => p.id == id);
+                if (!post) return;
+                document.getElementById('modalPostInfo').innerHTML = `<h6>${post.title} by ${post.author} (${post.group}) 字数:${post.words}</h6>`;
+                document.getElementById('modalContent').innerText = post.content || '（无文案）';
+                const reviewsDiv = document.getElementById('modalReviews');
+                reviewsDiv.innerHTML = post.reviews?.length ? post.reviews.map(r => `<div class="border p-2 mb-2"><span class="badge ${r.action==='通过'?'bg-success':r.action==='退回'?'bg-danger':'bg-secondary'}">${r.action}</span> <strong>${r.reviewer}</strong>: ${r.comment} <small>${r.time}</small></div>`).join('') : '<p class="text-muted">暂无批复</p>';
+                document.getElementById('reviewInputArea').style.display = isManagerOrAbove() ? 'block' : 'none';
+                document.getElementById('reviewModal').dataset.postId = id;
+                new bootstrap.Modal(document.getElementById('reviewModal')).show();
+            }
+
+            async function handleReview(action) {
+                const modal = document.getElementById('reviewModal');
+                const postId = modal.dataset.postId;
+                const comment = document.getElementById('reviewComment').value.trim();
+                if (!comment && action !== 'comment') return alert('请填写批复');
+                const posts = await getData('posts', []);
+                const post = posts.find(p => p.id == postId);
+                if (!post) return;
+                if (!post.reviews) post.reviews = [];
+                const actionName = action === 'approve' ? '通过' : action === 'reject' ? '退回' : '评论';
+                post.reviews.push({ reviewer: currentUser.nickname, action: actionName, comment: comment || '（无）', time: new Date().toLocaleString() });
+                await setData('posts', posts);
+                if (action === 'reject') addNotification(post.author, `稿件《${post.title}》被退回。批复：${comment||'无'}`);
+                bootstrap.Modal.getInstance(modal).hide();
+                refreshCurrentSection();
+            }
+
+            async function handleWithdrawSubmit(e) {
+                const amount = parseFloat(document.getElementById('withdrawAmount').value);
+                const method = document.getElementById('withdrawMethod').value;
+                const account = document.getElementById('withdrawAccount').value.trim();
+                if (!amount || amount <= 0 || !account) return alert('请填写完整');
+                const withdrawals = await getData('withdrawals', []);
+                withdrawals.push({ id: Date.now(), user: currentUser.nickname, amount, method, account, note: document.getElementById('withdrawNote').value.trim(), time: new Date().toLocaleString(), status: '待处理' });
+                await setData('withdrawals', withdrawals);
+                const users = await getData('users', []);
+                users.filter(u => u.role === 'boss' || u.role === 'admin').forEach(admin => addNotification(admin.nickname, `用户 ${currentUser.nickname} 提交了 ¥${amount} 提现申请`));
+                bootstrap.Modal.getInstance(document.getElementById('withdrawModal')).hide();
+                refreshCurrentSection();
+            }
+
+            async function handleNewRoyalty(e) {
+                const user = prompt('成员笔名', currentUser.nickname); if (!user) return;
+                const amount = parseFloat(prompt('金额')); if (amount <= 0) return;
+                const group = prompt('组别', currentUser.group) || currentUser.group;
+                const royalties = await getData('royalties', []);
+                royalties.push({ id: Date.now(), user, group, amount, status: '待确认', time: new Date().toISOString().slice(0,10) });
+                await setData('royalties', royalties);
+                refreshCurrentSection();
+            }
+
+            async function showMonthlyStats() {
+                const modal = new bootstrap.Modal(document.getElementById('monthlyStatsModal'));
+                const month = document.getElementById('statsMonth');
+                const now = new Date();
+                month.value = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+                await updateMonthlyStats();
+                modal.show();
+            }
+
+            async function updateMonthlyStats() {
+                const month = document.getElementById('statsMonth').value;
+                if (!month) return;
+                const royalties = await getData('royalties', []);
+                const stats = {};
+                royalties.forEach(r => {
+                    if (r.time?.startsWith(month)) {
+                        if (!stats[r.user]) stats[r.user] = { 已发:0,待确认:0,提取中:0,总计:0 };
+                        stats[r.user][r.status] = (stats[r.user][r.status]||0) + r.amount;
+                        stats[r.user].总计 += r.amount;
+                    }
+                });
+                const remaining = royalties.filter(r => r.status!=='已发').reduce((s,r)=>s+r.amount,0);
+                let html = `<p>月份：${month} 剩余待发：¥${remaining}</p><table class="table table-sm"><thead><tr><th>成员</th><th>已发</th><th>待确认</th><th>提取中</th><th>总计</th></tr></thead><tbody>`;
+                if (Object.keys(stats).length) {
+                    Object.keys(stats).sort().forEach(u => html += `<tr><td>${u}</td><td>¥${stats[u].已发}</td><td>¥${stats[u].待确认}</td><td>¥${stats[u].提取中}</td><td>¥${stats[u].总计}</td></tr>`);
+                } else html += '<tr><td colspan="5" class="text-center">无记录</td></tr>';
+                html += '</tbody></table>';
+                document.getElementById('monthlyStatsContent').innerHTML = html;
+            }
+
+            async function handlePublishNotice(e) {
+                if (!canPublishNotice()) return alert('权限不足');
+                const title = prompt('标题'); if (!title) return;
+                const content = prompt('正文', '');
+                const top = confirm('置顶？');
+                const noticeObj = { title, content: content || '', publisher: currentUser.nickname, time: new Date().toLocaleString(), top };
+                const url = getDiscussUrl('notice');
+                const success = await postComment(url, currentUser.nickname, JSON.stringify(noticeObj));
+                if (success) {
+                    alert('发布成功');
+                    refreshCurrentSection();
+                } else {
+                    alert('发布失败，请稍后重试');
+                }
+            }
+
+            async function handleMarkRead(e) {
+                const id = e.target.closest('.mark-read').dataset.id;
+                const notifs = await getData('notifications', []);
+                const idx = notifs.findIndex(n => n.id == id);
+                if (idx !== -1) notifs[idx].read = true;
+                await setData('notifications', notifs);
+                refreshCurrentSection();
+            }
+
+            async function handleMemberAction(e) {
+                const btn = e.target.closest('button');
+                const account = btn.dataset.account;
+                if (!account) return;
+                const users = await getData('users', []);
+                const user = users.find(u => u.account === account);
+                if (!user) return;
+                const groups = await getData('groups', []);
+
+                if (btn.classList.contains('change-group')) {
+                    const newGroup = prompt('新主组', user.group);
+                    if (!newGroup) return;
+                    if (ADMIN_GROUPS.includes(newGroup) && !isBoss()) return alert('只有老板可调入管理组');
+                    if (groups.includes(newGroup)) { user.group = newGroup; await setData('users', users); refreshCurrentSection(); }
+                } else if (btn.classList.contains('add-group')) {
+                    const extra = prompt('兼任组', '');
+                    if (!extra) return;
+                    if (ADMIN_GROUPS.includes(extra) && !isBoss()) return alert('只有老板可添加管理组');
+                    if (groups.includes(extra) && extra !== user.group && !user.extraGroups.includes(extra)) {
+                        user.extraGroups.push(extra); await setData('users', users); refreshCurrentSection();
+                    }
+                } else if (btn.classList.contains('set-manager')) { 
+                    if (!isBoss()) return alert('只有老板可设置管理员');
+                    user.role = 'manager'; await setData('users', users); refreshCurrentSection(); 
+                } else if (btn.classList.contains('set-admin')) { 
+                    if (!isBoss()) return alert('只有老板可设置高级管理员');
+                    user.role = 'admin'; await setData('users', users); refreshCurrentSection(); 
+                } else if (btn.classList.contains('demote-member')) { 
+                    if (!isBoss()) return alert('只有老板可降级');
+                    user.role = 'member'; await setData('users', users); refreshCurrentSection(); 
+                } else if (btn.classList.contains('demote-manager')) { 
+                    if (!isBoss()) return alert('只有老板可降级');
+                    user.role = 'manager'; await setData('users', users); refreshCurrentSection(); 
+                } else if (btn.classList.contains('delete-member')) {
+                    if (!isBoss()) return alert('只有老板可删除成员');
+                    if (user.account === currentUser.account) return alert('不能删除自己');
+                    if (!confirm(`确定删除成员 ${user.nickname}（账号：${user.account}）吗？此操作将同时删除该成员的所有投稿、稿费记录、提现申请和交流消息。`)) return;
+                    
+                    const nickname = user.nickname;
+                    const posts = (await getData('posts', [])).filter(p => p.author !== nickname);
+                    await setData('posts', posts);
+                    const royalties = (await getData('royalties', [])).filter(r => r.user !== nickname);
+                    await setData('royalties', royalties);
+                    const withdrawals = (await getData('withdrawals', [])).filter(w => w.user !== nickname);
+                    await setData('withdrawals', withdrawals);
+                    const newUsers = users.filter(u => u.account !== account);
+                    await setData('users', newUsers);
+                    refreshCurrentSection();
+                }
+            }
+
+            async function handleEditProgress(e) {
+                const btn = e.target.closest('.edit-progress');
+                const group = btn.dataset.group;
+                let progress = await getData('progress', []);
+                const item = progress.find(p => p.group === group);
+                if (!item) return;
+                const newWords = prompt('修改本周字数', item.weekWords);
+                if (newWords && !isNaN(newWords)) item.weekWords = parseInt(newWords);
+                const outline = confirm('大纲已完成？');
+                item.outlineDone = outline;
+                await setData('progress', progress);
+                refreshCurrentSection();
+            }
+
+            async function handleEditStatus(e) {
+                const id = e.target.closest('.edit-status').dataset.id;
+                let royalties = await getData('royalties', []);
+                const r = royalties.find(r => r.id == id);
+                if (!r) return;
+                const ns = prompt('新状态：已发/待确认/提取中', r.status);
+                if (ns && ['已发','待确认','提取中'].includes(ns)) { r.status = ns; await setData('royalties', royalties); refreshCurrentSection(); }
+            }
+
+            async function handleDeleteRoyalty(e) {
+                const id = e.target.closest('.delete-royalty').dataset.id;
+                if (!confirm('删除？')) return;
+                const royalties = (await getData('royalties', [])).filter(r => r.id != id);
+                await setData('royalties', royalties);
+                refreshCurrentSection();
+            }
+
+            async function handleApproveWithdraw(e) {
+                const id = e.target.closest('.approve-withdraw').dataset.id;
+                let withdrawals = await getData('withdrawals', []);
+                const w = withdrawals.find(w => w.id == id);
+                if (w) { w.status = '已通过'; await setData('withdrawals', withdrawals); addNotification(w.user, `提现 ¥${w.amount} 已通过`); refreshCurrentSection(); }
+            }
+
+            async function handleRejectWithdraw(e) {
+                const id = e.target.closest('.reject-withdraw').dataset.id;
+                let withdrawals = await getData('withdrawals', []);
+                const w = withdrawals.find(w => w.id == id);
+                if (w) { w.status = '已拒绝'; await setData('withdrawals', withdrawals); addNotification(w.user, `提现 ¥${w.amount} 被拒绝`); refreshCurrentSection(); }
+            }
+
+            async function handleAddGroup(e) {
+                const newGroup = document.getElementById('newGroupName').value.trim();
+                if (!newGroup) return;
+                const groups = await getData('groups', []);
+                if (groups.includes(newGroup)) return alert('已存在');
+                groups.push(newGroup);
+                await setData('groups', groups);
+                let progress = await getData('progress', []);
+                if (!progress.some(p => p.group === newGroup)) {
+                    progress.push({ group: newGroup, outlineDone: false, weekWords: 0, target: 28000 });
+                    await setData('progress', progress);
+                }
+                bootstrap.Modal.getInstance(document.getElementById('addGroupModal')).hide();
+                document.getElementById('newGroupName').value = '';
+                refreshCurrentSection();
+            }
+
+            async function handleSaveTarget(e) {
+                const newTarget = parseInt(document.getElementById('globalTarget').value, 10);
+                if (newTarget > 0) {
+                    let progress = await getData('progress', []);
+                    progress.forEach(p => p.target = newTarget);
+                    await setData('progress', progress);
+                    alert('目标已更新');
+                    refreshCurrentSection();
+                }
+            }
+
+            function handleBackup(e) {
+                alert('云端数据无需备份，如需本地备份请手动复制');
+            }
+
+            async function handleSendDiscuss(type) {
+                if (!currentUser) return alert('请先登录');
+                let url, inputId;
+                if (type === 'group') {
+                    url = getDiscussUrl('group', currentUser.group);
+                    inputId = 'discussInput';
+                } else if (type === 'global') {
+                    url = getDiscussUrl('global');
+                    inputId = 'globalDiscussInput';
+                } else if (type === 'allGroups') {
+                    const select = document.getElementById('allGroupsSelect');
+                    if (!select) return;
+                    const group = select.value;
+                    url = getDiscussUrl('group', group);
+                    inputId = 'allGroupsDiscussInput';
+                } else return;
+                const input = document.getElementById(inputId);
+                if (!input) return;
+                const text = input.value.trim();
+                if (!text) return;
+
+                const success = await postComment(url, currentUser.nickname, text);
+                if (success) {
+                    input.value = '';
+                    refreshCurrentSection();
+                } else {
+                    alert('发送失败，请稍后重试');
+                }
+            }
+
+            // ---------- 渲染函数 ----------
+            async function renderApp() {
+                await syncCurrentUser();
+                const sidebar = document.getElementById('sidebar');
+                const roleMap = { boss:'老板', admin:'高级管理员', manager:'普通管理员', member:'成员' };
+                const roleClass = { boss:'role-boss', admin:'role-admin', manager:'role-manager', member:'role-member' };
+                let links = [
+                    { sec:'dashboard', icon:'speedometer2', name:'仪表盘' },
+                    { sec:'posts', icon:'pencil-square', name:'投稿管理' },
+                    { sec:'groupPanel', icon:'people', name:'我的组' },
+                    { sec:'discuss', icon:'chat-dots', name:'组内交流区' },
+                    { sec:'globalDiscuss', icon:'globe', name:'📢 总交流区' }
+                ];
+                if (isManagerOrAbove()) {
+                    links.push({ sec:'allGroupsDiscuss', icon:'list-columns', name:'管理·跨组交流' });
+                }
+                links.push(
+                    { sec:'progress', icon:'bar-chart', name:'考核进度' },
+                    { sec:'royalty', icon:'cash-stack', name:'稿费/提取' },
+                    { sec:'members', icon:'person-lines-fill', name:'人员名单' },
+                    { sec:'notices', icon:'megaphone', name:'通知公告' }
+                );
+                if (isBoss()) {
+                    links.push({ sec:'settings', icon:'gear', name:'设置管理' });
+                }
+                sidebar.innerHTML = `
+                    <h4 class="text-center mb-4 text-light">📚 万联网文</h4>
+                    <div class="mb-3 text-white-50 small">欢迎，<strong>${currentUser.nickname}</strong> <span class="badge ${roleClass[currentUser.role]}">${roleMap[currentUser.role]}</span></div>
+                    <nav>
+                        ${links.map(l => `<a href="#" class="nav-link ${activeSection===l.sec?'active':''}" data-section="${l.sec}"><i class="bi bi-${l.icon}"></i> ${l.name}</a>`).join('')}
+                        <hr class="bg-secondary"><a href="#" id="logoutBtnSide"><i class="bi bi-box-arrow-right"></i> 退出</a>
+                    </nav>
+                `;
+                sidebar.querySelectorAll('nav a[data-section]').forEach(a => {
+                    a.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        activeSection = a.dataset.section;
+                        sidebar.querySelectorAll('nav a').forEach(l => l.classList.remove('active'));
+                        a.classList.add('active');
+                        renderSection(activeSection);
+                    });
+                });
+                renderSection(activeSection);
+            }
+
+            async function renderSection(section) {
+                const main = document.getElementById('mainContent');
+                const fns = {
+                    dashboard: renderDashboard,
+                    posts: renderPosts,
+                    groupPanel: renderGroupPanel,
+                    discuss: renderDiscuss,
+                    globalDiscuss: renderGlobalDiscuss,
+                    allGroupsDiscuss: renderAllGroupsDiscuss,
+                    progress: renderProgress,
+                    royalty: renderRoyalty,
+                    members: renderMembers,
+                    notices: renderNotices,
+                    settings: renderSettings
+                };
+                if (fns[section]) await fns[section](main);
+            }
+
+            async function renderDashboard(container) {
+                const posts = await getData('posts', []);
+                const users = await getData('users', []);
+                const r = await getData('royalties', []);
+                const wd = await getData('withdrawals', []);
+                const totalPosts = posts.length;
+                const totalWords = posts.reduce((a,p)=>a+p.words,0);
+                const pendingR = r.filter(r=>r.status!=='已发').length;
+                const pendingW = wd.filter(w=>w.status==='待处理').length;
+                const notifs = (await getData('notifications', [])).filter(n=>n.targetUser===currentUser.nickname && !n.read);
+                container.innerHTML = `
+                    <div class="alert alert-info">安全防护已启用 · 全员互动中 · 数据云端同步</div>
+                    ${notifs.length ? `<div class="alert alert-warning">您有 ${notifs.length} 条未读通知<div class="mt-2">${notifs.map(n=>`<div class="border-bottom pb-1">${n.message} <small>${n.time}</small> <button class="btn btn-sm btn-outline-primary mark-read float-end" data-id="${n.id}">标为已读</button></div>`).join('')}</div></div>` : ''}
+                    <div class="row"><div class="col-12"><h2>📋 仪表盘</h2><p>稿费待处理:${pendingR} 提现待审核:${pendingW}</p></div>${[
+                        ['总投稿',totalPosts,'primary'],['完成字数(万)',(totalWords/10000).toFixed(1),'success'],
+                        ['待发稿费','¥'+r.filter(r=>r.status!=='已发').reduce((s,r)=>s+r.amount,0),'warning'],
+                        ['成员总数',users.length,'danger']
+                    ].map(([t,v,c])=>`<div class="col-md-3"><div class="card text-white bg-${c}"><div class="card-body"><h5 class="card-title">${t}</h5><p class="display-6">${v}</p></div></div></div>`).join('')}</div>
+                `;
+            }
+
+            async function renderPosts(container) {
+                const posts = await getData('posts', []);
+                const filtered = canViewAllGroups() ? posts : posts.filter(p => p.group===currentUser.group || currentUser.extraGroups?.includes(p.group));
+                container.innerHTML = `
+                    <div class="card"><div class="card-header d-flex justify-content-between"><span>📝 ${canViewAllGroups()?'全部投稿':'本组投稿'}</span><span class="badge bg-secondary">${canViewAllGroups()?'所有组':currentUser.group}</span></div>
+                    <div class="card-body"><div class="table-responsive"><table class="table table-hover"><thead><tr><th>组别</th><th>标题</th><th>作者</th><th>时间</th><th>字数</th><th>操作</th></tr></thead><tbody>
+                        ${filtered.map(p => {
+                            const canDelete = (p.author === currentUser.nickname || isManagerOrAbove());
+                            return `<tr><td>${p.group}</td><td>${p.title}</td><td>${p.author}</td><td>${p.time}</td><td>${p.words}</td><td>
+                                <i class="bi bi-eye btn btn-sm btn-outline-secondary view-post" data-id="${p.id}"></i> 审阅
+                                ${canDelete ? `<i class="bi bi-trash delete-post btn btn-sm btn-outline-danger" data-id="${p.id}"></i>` : ''}
+                            </td></tr>`;
+                        }).join('')}
+                        ${filtered.length?'':'<tr><td colspan="6" class="text-center">暂无投稿</td></tr>'}
+                    </tbody></table></div><button class="btn btn-sm btn-outline-primary" id="newPostBtn">+ 新投稿</button></div></div>
+                `;
+            }
+
+            async function renderGroupPanel(container) {
+                const posts = await getData('posts', []);
+                const filtered = posts.filter(p => p.group === currentUser.group);
+                container.innerHTML = `<div class="card"><div class="card-header">🧘 ${currentUser.group} · 本组投稿</div><div class="card-body"><ul class="list-group">${filtered.map(p=>`<li class="list-group-item d-flex justify-content-between">${p.title} 作者: ${p.author} <span>${p.words}字</span></li>`).join('')||'<li class="list-group-item text-muted">暂无</li>'}</ul></div></div>`;
+            }
+
+            async function renderDiscuss(container) {
+                const url = getDiscussUrl('group', currentUser.group);
+                const comments = await fetchComments(url);
+                container.innerHTML = `
+                    <div class="card">
+                        <div class="card-header">💬 ${currentUser.group} · 交流区</div>
+                        <div class="card-body discuss-messages" id="discussMessages"></div>
+                        <div class="card-footer d-flex gap-2">
+                            <input type="text" class="form-control" id="discussInput" placeholder="发言...">
+                            <button class="btn btn-sm btn-primary" id="sendDiscussBtn">发送</button>
+                        </div>
+                    </div>
+                `;
+                const msgContainer = document.getElementById('discussMessages');
+                await renderComments(msgContainer, comments);
+            }
+
+            async function renderGlobalDiscuss(container) {
+                const url = getDiscussUrl('global');
+                const comments = await fetchComments(url);
+                container.innerHTML = `
+                    <div class="card">
+                        <div class="card-header">🌐 总交流区 · 所有人可见</div>
+                        <div class="card-body discuss-messages" id="globalDiscussMessages"></div>
+                        <div class="card-footer d-flex gap-2">
+                            <input type="text" class="form-control" id="globalDiscussInput" placeholder="发言...">
+                            <button class="btn btn-sm btn-primary" id="sendGlobalDiscussBtn">发送</button>
+                        </div>
+                    </div>
+                `;
+                const msgContainer = document.getElementById('globalDiscussMessages');
+                await renderComments(msgContainer, comments);
+            }
+
+            async function renderAllGroupsDiscuss(container) {
+                if (!isManagerOrAbove()) {
+                    container.innerHTML = '<div class="alert alert-danger">无权访问</div>';
+                    return;
+                }
+                const groups = await getData('groups', []);
+                const defaultGroup = groups.find(g => !ADMIN_GROUPS.includes(g)) || groups[0];
+                const url = getDiscussUrl('group', defaultGroup);
+                const comments = await fetchComments(url);
+
+                container.innerHTML = `
+                    <div class="card">
+                        <div class="card-header">👥 管理·跨组交流区 (可向任意组发送消息)</div>
+                        <div class="card-body">
+                            <div class="d-flex gap-2 mb-2">
+                                <select class="form-select" id="allGroupsSelect" style="width: auto; max-width:200px;">
+                                    ${groups.map(g => `<option value="${g}" ${g === defaultGroup ? 'selected' : ''}>${g}</option>`).join('')}
+                                </select>
+                                <button class="btn btn-sm btn-outline-secondary" id="refreshAllGroupsBtn">刷新</button>
+                            </div>
+                            <div class="discuss-messages" id="allGroupsDiscussMessages"></div>
+                        </div>
+                        <div class="card-footer d-flex gap-2">
+                            <input type="text" class="form-control" id="allGroupsDiscussInput" placeholder="向所选组发送消息...">
+                            <button class="btn btn-sm btn-primary" id="sendAllGroupsBtn">发送</button>
+                        </div>
+                    </div>
+                `;
+                const msgContainer = document.getElementById('allGroupsDiscussMessages');
+                await renderComments(msgContainer, comments);
+
+                document.getElementById('allGroupsSelect').addEventListener('change', async function(e) {
+                    const newGroup = e.target.value;
+                    const newUrl = getDiscussUrl('group', newGroup);
+                    const newComments = await fetchComments(newUrl);
+                    await renderComments(msgContainer, newComments);
+                });
+                document.getElementById('refreshAllGroupsBtn').addEventListener('click', async function() {
+                    const select = document.getElementById('allGroupsSelect');
+                    const group = select.value;
+                    const newUrl = getDiscussUrl('group', group);
+                    const newComments = await fetchComments(newUrl);
+                    await renderComments(msgContainer, newComments);
+                });
+            }
+
+            async function renderProgress(container) {
+                let prog = await getData('progress', []);
+                const canView = canViewAllGroups();
+                let filtered = canView ? prog : prog.filter(p => p.group === currentUser.group);
+                container.innerHTML = `
+                    <div class="card"><div class="card-header">📊 考核进度 ${canView?'<span class="badge bg-info">管理员可编辑</span>':''}</div>
+                    <div class="card-body"><div class="table-responsive"><table class="table table-sm"><thead><tr><th>组别</th><th>大纲</th><th>本周字数</th><th>目标</th><th>进度</th>${canView?'<th>操作</th>':''}</tr></thead><tbody>
+                        ${filtered.map(p => {
+                            const percent = Math.min(100, Math.round(p.weekWords/p.target*100));
+                            return `<tr><td>${p.group}</td><td>${p.outlineDone?'✅':'⏳'}</td><td>${p.weekWords}</td><td>${p.target}</td><td><div class="progress"><div class="progress-bar" style="width:${percent}%">${percent}%</div></div></td>${canView?`<td><button class="btn btn-sm btn-outline-secondary edit-progress" data-group="${p.group}">编辑</button></td>`:''}</tr>`;
+                        }).join('')}
+                    </tbody></table></div></div></div>
+                `;
+            }
+
+            async function renderRoyalty(container) {
+                const r = await getData('royalties', []);
+                const w = await getData('withdrawals', []);
+                const now = new Date();
+                const month = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+                const monthly = w.filter(w=>w.status==='已通过' && w.time.startsWith(month)).reduce((s,w)=>s+w.amount,0);
+                const userR = r.filter(rr => isManagerOrAbove() ? true : rr.user === currentUser.nickname);
+                container.innerHTML = `
+                    <div class="row"><div class="col-md-6"><div class="card"><div class="card-header d-flex justify-content-between"><span>💰 稿费记录</span><span>${isAdminOrBoss()?'<button class="btn btn-sm btn-info me-2" id="monthlyStatsBtn">📊 月度统计</button>':''}${isManagerOrAbove()?'<button class="btn btn-sm btn-primary" id="newRoyaltyBtn">+ 发放</button>':''}</span></div>
+                    <div class="card-body"><ul class="list-group">${userR.map(rr=>`<li class="list-group-item d-flex justify-content-between"><span><strong>${rr.user}</strong> · ${rr.group}  ¥${rr.amount}</span><span class="badge ${rr.status==='已发'?'bg-success':rr.status==='待确认'?'bg-warning':'bg-secondary'}">${rr.status}</span><span>${isManagerOrAbove()?`<button class="btn btn-sm btn-outline-success edit-status" data-id="${rr.id}">改</button><button class="btn btn-sm btn-outline-danger delete-royalty" data-id="${rr.id}">删</button>`:''}</span></li>`).join('')}</ul></div></div></div>
+                    <div class="col-md-6"><div class="card"><div class="card-header">💳 提现申请</div><div class="card-body"><p>月度流水：¥${monthly} (${month})</p><button class="btn btn-sm btn-success" id="newWithdrawBtn">申请提现</button><hr><h6>历史记录</h6><ul class="list-group" style="max-height:200px; overflow:auto">${w.filter(w=>w.user===currentUser.nickname||isManagerOrAbove()).map(w=>`<li class="list-group-item d-flex justify-content-between"><span>${w.user} ¥${w.amount} (${w.method})</span><span class="badge ${w.status==='已通过'?'bg-success':w.status==='已拒绝'?'bg-danger':'bg-warning'}">${w.status}</span>${canApproveWithdrawals()&&w.status==='待处理'?`<span><button class="btn btn-sm btn-success approve-withdraw" data-id="${w.id}">通过</button><button class="btn btn-sm btn-danger reject-withdraw" data-id="${w.id}">拒绝</button></span>`:''}</li>`).join('')}</ul></div></div></div></div>
+                `;
+            }
+
+            async function renderMembers(container) {
+                const users = await getData('users', []);
+                const groups = await getData('groups', []);
+                const canManage = isManagerOrAbove();
+                const isBossUser = isBoss();
+                let tabs = '<ul class="nav nav-tabs">' + groups.map((g,i)=>`<li class="nav-item"><button class="nav-link ${i===0?'active':''}" data-bs-toggle="tab" data-bs-target="#group${i}">${g}</button></li>`).join('') + '</ul><div class="tab-content mt-3">';
+                groups.forEach((g,i) => {
+                    const members = users.filter(u=>u.group===g);
+                    tabs += `<div class="tab-pane fade ${i===0?'show active':''}" id="group${i}"><table class="table table-sm"><thead><tr><th>姓名</th><th>账号</th><th>主组</th><th>兼任</th><th>角色</th>${canManage?'<th>操作</th>':''}</tr></thead><tbody>`;
+                    members.forEach(u => {
+                        const roleMap = { boss:'老板', admin:'高级管理员', manager:'普通管理员', member:'成员' };
+                        const roleClass = { boss:'role-boss', admin:'role-admin', manager:'role-manager', member:'role-member' };
+                        tabs += `<tr><td>${u.nickname}</td><td>${u.account}</td><td><span class="badge bg-primary">${u.group}</span></td><td>${u.extraGroups?.join(', ')||''}</td><td><span class="badge ${roleClass[u.role]}">${roleMap[u.role]}</span></td>`;
+                        if (canManage && u.account !== currentUser.account) {
+                            tabs += `<td>`;
+                            if (canManageAllGroups() || (currentUser.role==='manager' && u.group===currentUser.group)) {
+                                tabs += `<button class="btn btn-outline-secondary btn-permission change-group" data-account="${u.account}">换组</button><button class="btn btn-outline-info btn-permission add-group" data-account="${u.account}">加组</button>`;
+                            }
+                            if (isBossUser) {
+                                if (u.role === 'member') {
+                                    tabs += `<button class="btn btn-outline-warning btn-permission set-manager" data-account="${u.account}">设为普通管理员</button>`;
+                                } else if (u.role === 'manager') {
+                                    tabs += `<button class="btn btn-outline-primary btn-permission set-admin" data-account="${u.account}">设为高级管理员</button>`;
+                                    tabs += `<button class="btn btn-outline-danger btn-permission demote-member" data-account="${u.account}">降为成员</button>`;
+                                } else if (u.role === 'admin') {
+                                    tabs += `<button class="btn btn-outline-danger btn-permission demote-manager" data-account="${u.account}">降为普通管理员</button>`;
+                                    tabs += `<button class="btn btn-outline-secondary btn-permission demote-member" data-account="${u.account}">降为成员</button>`;
+                                }
+                                tabs += `<button class="btn btn-outline-danger btn-permission delete-member" data-account="${u.account}">删除成员</button>`;
+                            }
+                            tabs += `</td>`;
+                        } else if (canManage && u.account === currentUser.account) {
+                            tabs += '<td><span class="text-muted">自己</span></td>';
+                        } else {
+                            tabs += '<td></td>';
+                        }
+                        tabs += `</tr>`;
+                    });
+                    tabs += members.length?'':'<tr><td colspan="6" class="text-center">暂无成员</td></tr>';
+                    tabs += '</tbody></table></div>';
+                });
+                tabs += '</div>';
+                if (canManage) tabs += `<div class="mt-2"><button class="btn btn-sm btn-success" id="addMemberBtn">+ 新增成员</button></div>`;
+                container.innerHTML = `<div class="card"><div class="card-header"><i class="bi bi-people"></i> 人员名单 · 共${groups.length}组</div><div class="card-body">${tabs}<p class="small text-muted mt-2">只有老板可删除成员</p></div></div>`;
+                document.getElementById('addMemberBtn')?.addEventListener('click', async function() {
+                    const account = prompt('账号(纯英文)'); if (!account || !/^[A-Za-z]+$/.test(account)) return alert('账号需纯英文');
+                    const pwd = prompt('密码(字母+数字)'); if (!pwd || !/^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]+$/.test(pwd)) return alert('密码需字母数字');
+                    const nickname = prompt('笔名'); if (!nickname) return;
+                    let group = prompt('主组别', currentUser.group); if (!group || !groups.includes(group)) return alert('无效组别');
+                    const users = await getData('users', []);
+                    if (users.some(u=>u.account===account)) return alert('账号已存在');
+                    users.push({ account, password: pwd, nickname, role: 'member', group, extraGroups: [] });
+                    await setData('users', users);
+                    refreshCurrentSection();
+                });
+            }
+
+            async function renderNotices(container) {
+                const url = getDiscussUrl('notice');
+                const comments = await fetchComments(url);
+                const notices = comments.map(c => {
+                    try { return JSON.parse(c.content); } catch { return null; }
+                }).filter(n => n !== null);
+                notices.sort((a, b) => {
+                    if (a.top && !b.top) return -1;
+                    if (!a.top && b.top) return 1;
+                    return new Date(b.time) - new Date(a.time);
+                });
+                const canPub = canPublishNotice();
+                let html = `<div class="card"><div class="card-header d-flex justify-content-between"><span><i class="bi bi-megaphone"></i> 通知公告</span><span class="badge bg-warning">发布:高级管理员及老板</span></div><div class="card-body">`;
+                if (notices.length === 0) {
+                    html += '<div class="text-muted">暂无公告</div>';
+                } else {
+                    notices.forEach(n => {
+                        const topClass = n.top ? 'notice-item top' : 'notice-item';
+                        html += `<div class="${topClass}">
+                            <div><strong>📢 ${n.title}</strong> <small class="text-muted">(${n.publisher} ${n.time})</small></div>
+                            <div class="mt-2">${n.content}</div>
+                        </div>`;
+                    });
+                }
+                if (canPub) html += '<button class="btn btn-sm btn-danger mt-2" id="publishNoticeBtn">发布新通知</button>';
+                html += '</div></div>';
+                container.innerHTML = html;
+            }
+
+            async function renderSettings(container) {
+                if (!isBoss()) { container.innerHTML = '<div class="alert alert-danger">无权访问</div>'; return; }
+                const groups = await getData('groups', []);
+                const progress = await getData('progress', []);
+                const currentTarget = progress.length > 0 ? progress[0].target : 28000;
+                container.innerHTML = `
+                    <div class="card"><div class="card-header">⚙️ 设置管理 · 仅老板</div><div class="card-body">
+                    <div class="row"><div class="col-md-4"><h6>每周目标字数</h6><input id="globalTarget" class="form-control" value="${currentTarget}"></div>
+                    <div class="col-md-4"><h6>安全选项</h6><div class="form-check"><input class="form-check-input" type="checkbox" checked disabled> 云端数据加密存储</div></div>
+                    <div class="col-md-4"><h6>组别管理</h6><p>当前组别：${groups.join('、')}</p><button class="btn btn-outline-primary btn-sm" id="addGroupBtn">新增组别</button> <button class="btn btn-outline-secondary btn-sm" id="backupBtn">备份数据(本地)</button></div></div>
+                    <button class="btn btn-primary mt-2" id="saveGlobalTarget">保存目标</button></div></div>
+                `;
+            }
+
+            // 初始化注册下拉框
+            async function fillRegGroup() {
+                const select = document.getElementById('regGroup');
+                const groups = await getData('groups', []);
+                const normalGroups = groups.filter(g => !ADMIN_GROUPS.includes(g));
+                select.innerHTML = normalGroups.map(g => `<option>${g}</option>`).join('');
+            }
+            fillRegGroup();
+
+            window.addEventListener('load', () => {
+                document.getElementById('loginContainer').classList.remove('hidden');
+                document.getElementById('appContainer').classList.add('hidden');
+            });
+        })();
+    </script>
+</body>
+</html>
